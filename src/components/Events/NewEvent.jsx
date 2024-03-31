@@ -12,7 +12,7 @@ export default function NewEvent() {
 
   const {mutate,isPending,isError, error}= useMutation({
       mutationFn : createNewEvent,
-      onSuccess: ()=>{
+      onSuccess:()=>{
         queryClient.invalidateQueries({queryKey:['events']});
         navigate('/events');
       }
@@ -21,7 +21,6 @@ export default function NewEvent() {
 
   function handleSubmit(formData) {
     mutate({ event: formData});
-    console.log(formData);
     
 
   }
