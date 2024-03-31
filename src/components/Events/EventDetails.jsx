@@ -1,8 +1,75 @@
-import { Link, Outlet } from 'react-router-dom';
+import { Link, Outlet, useNavigate, useParams } from 'react-router-dom';
 
 import Header from '../Header.jsx';
+import {  useMutation, useQuery } from '@tanstack/react-query';
+import { deleteEvent, fetchEvent ,queryClient} from '../../utils/Http.js';
+import ErrorBlock from '../UI/ErrorBlock.jsx';
 
 export default function EventDetails() {
+  const navigate= useNavigate();
+  const params=useParams();
+
+
+  const {data, isPending, isError,error}= useQuery({
+    queryKey:['events',params.id],
+    queryFn:({signal})=>fetchEvent({signal, id:params.id})
+  })
+  
+  const {mutate}=useMutation({
+    mutationFn:deleteEvent,
+    onSuccess:()=>{
+      queryClient.invalidateQueries({
+        queryKey:['events']
+      });
+      navigate('/events')
+    },
+  })
+  function handleDelete(){
+    mutate({id:params.id});
+
+  }
+
+  let content;
+
+  if (isPending) {
+    content = "loading.....";
+  }
+
+  if (isError) {
+    content = (
+      <ErrorBlock title="An error occurred" message={error.info?.message||"Failed to fetch event"} />
+    );
+  }
+
+  if(data) { 
+
+    const formttedDate=new Date(data.date).toLocaleDateString('en-us',{
+      day:'numeric',
+      month:'short',
+      year:'numeric',
+    })
+    content=(
+      <>
+        <header>
+          <h1>{data.title}</h1>
+          <nav>
+            <button onClick={handleDelete}>Delete</button>
+            <Link to="edit">Edit</Link>
+          </nav>
+        </header>
+        <div id="event-details-content">
+          <img src={`http://localhost:3000/${data.image}`} alt={data.title} />
+          <div id="event-details-info">
+            <div>
+              <p id="event-details-location">{data.location}</p>
+              <time dateTime={`Todo-DateT$Todo-Time`}>{formttedDate} @{data.time}</time>
+            </div>
+            <p id="event-details-description">{data.description}</p>
+          </div>
+        </div>
+      </>
+    
+  )}
   return (
     <>
       <Outlet />
@@ -12,23 +79,8 @@ export default function EventDetails() {
         </Link>
       </Header>
       <article id="event-details">
-        <header>
-          <h1>EVENT TITLE</h1>
-          <nav>
-            <button>Delete</button>
-            <Link to="edit">Edit</Link>
-          </nav>
-        </header>
-        <div id="event-details-content">
-          <img src="" alt="" />
-          <div id="event-details-info">
-            <div>
-              <p id="event-details-location">EVENT LOCATION</p>
-              <time dateTime={`Todo-DateT$Todo-Time`}>DATE @ TIME</time>
-            </div>
-            <p id="event-details-description">EVENT DESCRIPTION</p>
-          </div>
-        </div>
+        
+        {content}
       </article>
     </>
   );

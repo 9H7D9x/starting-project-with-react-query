@@ -4,14 +4,25 @@ import {createNewEvent} from "../../utils/Http.js"
 import Modal from '../UI/Modal.jsx';
 import EventForm from './EventForm.jsx';
 import ErrorBlock from '../UI/ErrorBlock.jsx';
+import {queryClient} from '../../utils/Http.js';
 
 export default function NewEvent() {
   const navigate = useNavigate();
+
+
   const {mutate,isPending,isError, error}= useMutation({
       mutationFn : createNewEvent,
+      onSuccess: ()=>{
+        queryClient.invalidateQueries({queryKey:['events']});
+        navigate('/events');
+      }
  });
+
+
   function handleSubmit(formData) {
-    mutate({event:formData});
+    mutate({ event: formData});
+    console.log(formData);
+    
 
   }
 
@@ -20,8 +31,8 @@ export default function NewEvent() {
   return (
     <Modal onClose={() => navigate('../')}>
       <EventForm onSubmit={handleSubmit}>
-        {isPending&& 'submitting...'}
-        {!isPending&&(
+        {isPending && 'submitting...'}
+        {!isPending && (
            <>
            <Link to="../" className="button-text">
              Cancel
@@ -33,7 +44,7 @@ export default function NewEvent() {
         )}
        
       </EventForm>
-      {isError &&<ErrorBlock title="An error occurred" message={error.info?.message||"Failed to fetch events"}/>}
+      {isError &&<ErrorBlock title="Failed to create events" message={error.info?.message||"Failed to fetch events"}/>}
     </Modal>
   );
 }
